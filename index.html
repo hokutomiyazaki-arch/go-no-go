@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#667eea">
+    <title>Go/No-Go タスクトレーニング</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background 0.5s ease;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+        }
+
+        body.fullscreen-mode {
+            background: #1a1a1a;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .container.fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            max-width: 100%;
+            border-radius: 0;
+            display: flex;
+            flex-direction: column;
+            background: #1a1a1a;
+            color: white;
+        }
+
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 30px;
+            font-size: 2em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .fullscreen h1 {
+            color: white;
+        }
+
+        .settings-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .fullscreen .settings-panel {
+            position: fixed;
+            top: 60px;
+            left: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 999;
+            max-height: 40vh;
+            overflow-y: auto;
+        }
+
+        .setting-group {
+            background: rgba(255, 255, 255, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .fullscreen .setting-group {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #2d3748;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .fullscreen label {
+            color: #e2e8f0;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .fullscreen .controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            margin: 0;
+            z-index: 1000;
+            gap: 10px;
+        }
+
+        .menu-toggle {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 1001;
+            display: none;
+            padding: 10px 20px;
+            font-size: 14px;
+        }
+
+        .fullscreen .menu-toggle {
+            display: block;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .stop-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .fullscreen-btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .task-area {
+            min-height: 400px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .fullscreen .task-area {
+            flex: 1;
+            background: #2d3748;
+            border-radius: 0;
+            min-height: auto;
+            margin-bottom: 100px;
+        }
+
+        @media (max-width: 768px) {
+            .fullscreen .task-area {
+                margin-bottom: 80px;
+            }
+        }
+
+        .stimulus {
+            font-size: 180px;
+            font-weight: bold;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .stimulus {
+                font-size: 120px;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .instruction {
+            position: absolute;
+            top: 20px;
+            font-size: 24px;
+            color: #4a5568;
+            font-weight: 600;
+            text-align: center;
+            width: 100%;
+        }
+
+        .fullscreen .instruction {
+            color: #e2e8f0;
+            font-size: 32px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .fullscreen .stats {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px 20px;
+            border-radius: 10px;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            max-width: 90%;
+            flex-wrap: nowrap;
+        }
+
+        @media (max-width: 768px) {
+            .stats {
+                gap: 10px;
+            }
+            
+            .fullscreen .stats {
+                bottom: 10px;
+                padding: 10px 15px;
+                gap: 15px;
+                width: auto;
+                max-width: 95%;
+            }
+            
+            .fullscreen .stat-item {
+                padding: 8px 12px;
+                min-width: auto;
+            }
+            
+            .fullscreen .stat-value {
+                font-size: 18px;
+            }
+            
+            .fullscreen .stat-label {
+                font-size: 10px;
+            }
+        }
+
+        .stat-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 100px;
+        }
+
+        @media (max-width: 768px) {
+            .stat-item {
+                padding: 10px 15px;
+                min-width: 70px;
+            }
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .feedback {
+            position: absolute;
+            font-size: 48px;
+            font-weight: bold;
+            animation: feedbackPulse 0.5s ease;
+            pointer-events: none;
+        }
+
+        @keyframes feedbackPulse {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 0;
+            }
+        }
+
+        .feedback.correct {
+            color: #48bb78;
+        }
+
+        .feedback.incorrect {
+            color: #f56565;
+        }
+
+        .shape {
+            width: 200px;
+            height: 200px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .shape {
+                width: 150px;
+                height: 150px;
+            }
+        }
+
+        .circle {
+            background: #4299e1;
+            border-radius: 50%;
+        }
+
+        .square {
+            background: #48bb78;
+        }
+
+        .triangle {
+            width: 0;
+            height: 0;
+            border-left: 100px solid transparent;
+            border-right: 100px solid transparent;
+            border-bottom: 200px solid #f6ad55;
+        }
+
+        @media (max-width: 768px) {
+            .triangle {
+                border-left: 75px solid transparent;
+                border-right: 75px solid transparent;
+                border-bottom: 150px solid #f6ad55;
+            }
+        }
+
+        .diamond {
+            background: #ed64a6;
+            transform: rotate(45deg);
+            width: 141px;
+            height: 141px;
+        }
+
+        @media (max-width: 768px) {
+            .diamond {
+                width: 106px;
+                height: 106px;
+            }
+        }
+
+        .countdown {
+            font-size: 72px;
+            color: #4a5568;
+            font-weight: bold;
+            animation: countdownPulse 1s ease infinite;
+        }
+
+        .fullscreen .countdown {
+            color: #e2e8f0;
+            font-size: 120px;
+        }
+
+        @keyframes countdownPulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        .audio-indicator {
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            padding: 8px 16px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-radius: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .audio-indicator.active {
+            display: block;
+            animation: pulse 1s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 0.7;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="container">
+        <button class="menu-toggle" id="menuToggleBtn">メニュー</button>
+        <h1>🧠 Go/No-Go タスクトレーニング</h1>
+        
+        <div class="settings-panel">
+            <div class="setting-group">
+                <label for="stimulusType">刺激タイプ</label>
+                <select id="stimulusType">
+                    <option value="colors4">4色（赤・青・緑・黄）</option>
+                    <option value="arrows2">矢印2種（左・右）</option>
+                    <option value="arrows4">矢印4種（上・下・左・右）</option>
+                    <option value="shapes">図形4種</option>
+                    <option value="numbers">数字（奇数・偶数）</option>
+                </select>
+            </div>
+            
+            <div class="setting-group">
+                <label for="interval">刺激間隔（秒）</label>
+                <select id="interval">
+                    <option value="0.3">0.3秒</option>
+                    <option value="0.5">0.5秒</option>
+                    <option value="1">1秒</option>
+                    <option value="1.5">1.5秒</option>
+                    <option value="2" selected>2秒</option>
+                    <option value="2.5">2.5秒</option>
+                    <option value="3">3秒</option>
+                    <option value="random1-5">ランダム（1-5秒）</option>
+                    <option value="random3-10">ランダム（3-10秒）</option>
+                </select>
+            </div>
+            
+            <div class="setting-group">
+                <label for="duration">トレーニング時間（分）</label>
+                <select id="duration">
+                    <option value="1">1分</option>
+                    <option value="2">2分</option>
+                    <option value="3" selected>3分</option>
+                    <option value="5">5分</option>
+                    <option value="10">10分</option>
+                </select>
+            </div>
+            
+            <div class="setting-group">
+                <label for="goStimulus">Go刺激</label>
+                <select id="goStimulus">
+                    <option value="0">1番目の刺激</option>
+                    <option value="1">2番目の刺激</option>
+                </select>
+            </div>
+            
+            <div class="setting-group">
+                <label for="soundEnabled">刺激変更音</label>
+                <select id="soundEnabled">
+                    <option value="true">有効</option>
+                    <option value="false">無効</option>
+                </select>
+            </div>
+            
+            <div class="setting-group">
+                <label for="audioGoNoGo">聴覚Go/No-Go</label>
+                <select id="audioGoNoGo">
+                    <option value="false">無効</option>
+                    <option value="true">有効（ランダム音）</option>
+                </select>
+            </div>
+            
+            <div class="setting-group">
+                <label for="responseMode">反応モード</label>
+                <select id="responseMode">
+                    <option value="active">アクティブ（キー/タップで反応）</option>
+                    <option value="passive">パッシブ（反応なし・観察のみ）</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="start-btn" id="startBtn">スタート</button>
+            <button class="stop-btn" id="stopBtn" style="display: none;">ストップ</button>
+            <button class="fullscreen-btn" id="fullscreenBtn">全画面表示</button>
+        </div>
+        
+        <div class="task-area" id="taskArea">
+            <div class="instruction" id="instruction">設定を選択してスタートボタンを押してください</div>
+            <div id="stimulus"></div>
+            <div class="audio-indicator" id="audioIndicator">🔊 音声刺激</div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-label">正答数</div>
+                <div class="stat-value" id="correct">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">誤答数</div>
+                <div class="stat-value" id="incorrect">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">正答率</div>
+                <div class="stat-value" id="accuracy">0%</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">残り時間</div>
+                <div class="stat-value" id="timeLeft">--:--</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Audio Context for sound generation
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioContext = null;
+
+        // Game state
+        let gameState = {
+            isRunning: false,
+            currentStimulus: null,
+            goStimulus: null,
+            correct: 0,
+            incorrect: 0,
+            missed: 0,
+            responded: false,
+            startTime: null,
+            endTime: null,
+            intervalId: null,
+            timeoutId: null,
+            countdownId: null,
+            nextStimulusTimeout: null,
+            menuVisible: true
+        };
+
+        // Stimulus definitions
+        const stimuli = {
+            colors4: [
+                { type: 'color', value: '#ff6b6b', label: '赤' },
+                { type: 'color', value: '#4dabf7', label: '青' },
+                { type: 'color', value: '#51cf66', label: '緑' },
+                { type: 'color', value: '#ffd43b', label: '黄' }
+            ],
+            arrows2: [
+                { type: 'arrow', value: '←', label: '左' },
+                { type: 'arrow', value: '→', label: '右' }
+            ],
+            arrows4: [
+                { type: 'arrow', value: '↑', label: '上' },
+                { type: 'arrow', value: '↓', label: '下' },
+                { type: 'arrow', value: '←', label: '左' },
+                { type: 'arrow', value: '→', label: '右' }
+            ],
+            shapes: [
+                { type: 'shape', value: 'circle', label: '円' },
+                { type: 'shape', value: 'square', label: '四角' },
+                { type: 'shape', value: 'triangle', label: '三角' },
+                { type: 'shape', value: 'diamond', label: 'ダイヤ' }
+            ],
+            numbers: [
+                { type: 'number', value: 'odd', label: '奇数' },
+                { type: 'number', value: 'even', label: '偶数' }
+            ]
+        };
+
+        // Sound generation functions
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new AudioContext();
+            }
+        }
+
+        function playSound(frequency = 440, duration = 100, type = 'sine') {
+            if (!audioContext) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.type = type;
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration / 1000);
+        }
+
+        function playRandomSound() {
+            const frequencies = [261.63, 293.66, 329.63, 349.23, 392, 440, 493.88, 523.25];
+            const types = ['sine', 'square', 'triangle'];
+            const frequency = frequencies[Math.floor(Math.random() * frequencies.length)];
+            const type = types[Math.floor(Math.random() * types.length)];
+            playSound(frequency, 150, type);
+        }
+
+        function playFeedbackSound(correct) {
+            if (correct) {
+                playSound(523.25, 100, 'sine'); // High C
+                setTimeout(() => playSound(659.25, 100, 'sine'), 100); // High E
+            } else {
+                playSound(196, 200, 'sawtooth'); // Low G
+            }
+        }
+
+        // Display functions
+        function displayStimulus(stimulus) {
+            const stimulusEl = document.getElementById('stimulus');
+            stimulusEl.innerHTML = '';
+            
+            if (stimulus.type === 'color') {
+                stimulusEl.innerHTML = `<div style="width: 200px; height: 200px; background: ${stimulus.value}; border-radius: 10px;"></div>`;
+            } else if (stimulus.type === 'arrow') {
+                stimulusEl.innerHTML = `<div class="stimulus">${stimulus.value}</div>`;
+            } else if (stimulus.type === 'shape') {
+                stimulusEl.innerHTML = `<div class="shape ${stimulus.value}"></div>`;
+            } else if (stimulus.type === 'number') {
+                const num = stimulus.value === 'odd' ? 
+                    (Math.floor(Math.random() * 50) * 2 + 1) : 
+                    (Math.floor(Math.random() * 50) * 2);
+                stimulusEl.innerHTML = `<div class="stimulus">${num}</div>`;
+            }
+        }
+
+        function showFeedback(correct) {
+            const taskArea = document.getElementById('taskArea');
+            const feedback = document.createElement('div');
+            feedback.className = `feedback ${correct ? 'correct' : 'incorrect'}`;
+            feedback.textContent = correct ? '✓' : '✗';
+            taskArea.appendChild(feedback);
+            
+            setTimeout(() => feedback.remove(), 500);
+        }
+
+        function updateStats() {
+            const total = gameState.correct + gameState.incorrect;
+            const accuracy = total > 0 ? Math.round((gameState.correct / total) * 100) : 0;
+            
+            document.getElementById('correct').textContent = gameState.correct;
+            document.getElementById('incorrect').textContent = gameState.incorrect;
+            document.getElementById('accuracy').textContent = `${accuracy}%`;
+        }
+
+        function updateTimeLeft() {
+            if (!gameState.startTime || !gameState.endTime) return;
+            
+            const now = Date.now();
+            const timeLeft = Math.max(0, gameState.endTime - now);
+            const minutes = Math.floor(timeLeft / 60000);
+            const seconds = Math.floor((timeLeft % 60000) / 1000);
+            
+            document.getElementById('timeLeft').textContent = 
+                `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            if (timeLeft <= 0) {
+                stopGame();
+            }
+        }
+
+        function handleResponse() {
+            const responseMode = document.getElementById('responseMode').value;
+            
+            // In passive mode, don't handle responses
+            if (responseMode === 'passive') return;
+            
+            if (!gameState.isRunning || gameState.responded) return;
+            
+            gameState.responded = true;
+            const isGo = gameState.currentStimulus === gameState.goStimulus;
+            
+            if (isGo) {
+                gameState.correct++;
+                showFeedback(true);
+                playFeedbackSound(true);
+            } else {
+                gameState.incorrect++;
+                showFeedback(false);
+                playFeedbackSound(false);
+            }
+            
+            updateStats();
+        }
+
+        function presentStimulus() {
+            const stimulusType = document.getElementById('stimulusType').value;
+            const soundEnabled = document.getElementById('soundEnabled').value === 'true';
+            const audioGoNoGo = document.getElementById('audioGoNoGo').value === 'true';
+            const intervalSetting = document.getElementById('interval').value;
+            
+            const availableStimuli = stimuli[stimulusType];
+            const randomIndex = Math.floor(Math.random() * availableStimuli.length);
+            const stimulus = availableStimuli[randomIndex];
+            
+            gameState.currentStimulus = randomIndex;
+            gameState.responded = false;
+            
+            displayStimulus(stimulus);
+            
+            // Play sound
+            if (soundEnabled) {
+                playSound(440, 100);
+            }
+            
+            // Audio Go/No-Go
+            if (audioGoNoGo) {
+                const audioIndicator = document.getElementById('audioIndicator');
+                if (Math.random() < 0.3) { // 30% chance for audio stimulus
+                    playRandomSound();
+                    audioIndicator.classList.add('active');
+                    setTimeout(() => audioIndicator.classList.remove('active'), 500);
+                }
+            }
+            
+            // Calculate actual interval for this presentation
+            let actualInterval;
+            if (intervalSetting === 'random1-5') {
+                actualInterval = Math.random() * 4 + 1; // 1-5 seconds
+            } else if (intervalSetting === 'random3-10') {
+                actualInterval = Math.random() * 7 + 3; // 3-10 seconds
+            } else {
+                actualInterval = parseFloat(intervalSetting);
+            }
+            
+            // Check for missed Go stimulus (only in active mode)
+            const responseMode = document.getElementById('responseMode').value;
+            const isGo = randomIndex === gameState.goStimulus;
+            if (isGo && responseMode === 'active') {
+                gameState.timeoutId = setTimeout(() => {
+                    if (!gameState.responded && gameState.isRunning) {
+                        gameState.incorrect++;
+                        showFeedback(false);
+                        updateStats();
+                    }
+                }, actualInterval * 1000 - 100);
+            }
+            
+            // Schedule next stimulus with calculated interval
+            if (gameState.isRunning) {
+                gameState.nextStimulusTimeout = setTimeout(() => {
+                    if (gameState.isRunning) {
+                        presentStimulus();
+                    }
+                }, actualInterval * 1000);
+            }
+        }
+
+        function startCountdown(callback) {
+            let count = 3;
+            const stimulusEl = document.getElementById('stimulus');
+            const instructionEl = document.getElementById('instruction');
+            const responseMode = document.getElementById('responseMode').value;
+            const stimulusType = document.getElementById('stimulusType').value;
+            const goIndex = parseInt(document.getElementById('goStimulus').value);
+            const goStimulus = stimuli[stimulusType][goIndex];
+            
+            // Display Go stimulus instruction
+            if (responseMode === 'active') {
+                instructionEl.innerHTML = `Go刺激: <strong>${goStimulus.label}</strong> → スペースキー/タップ`;
+            } else {
+                instructionEl.innerHTML = `観察モード - Go刺激: <strong>${goStimulus.label}</strong>`;
+            }
+            
+            function updateCountdown() {
+                if (count > 0) {
+                    stimulusEl.innerHTML = `<div class="countdown">${count}</div>`;
+                    count--;
+                    gameState.countdownId = setTimeout(updateCountdown, 1000);
+                } else {
+                    stimulusEl.innerHTML = '';
+                    // Clear instruction after countdown
+                    instructionEl.textContent = '';
+                    callback();
+                }
+            }
+            
+            updateCountdown();
+        }
+
+        function startGame() {
+            initAudio();
+            
+            // Reset game state
+            gameState = {
+                isRunning: true,
+                currentStimulus: null,
+                goStimulus: parseInt(document.getElementById('goStimulus').value),
+                correct: 0,
+                incorrect: 0,
+                missed: 0,
+                responded: false,
+                startTime: Date.now(),
+                endTime: Date.now() + (parseInt(document.getElementById('duration').value) * 60000),
+                intervalId: null,
+                timeoutId: null,
+                countdownId: null,
+                nextStimulusTimeout: null,
+                menuVisible: gameState.menuVisible
+            };
+            
+            updateStats();
+            
+            // Update UI
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'inline-block';
+            
+            // Start countdown
+            startCountdown(() => {
+                // Start presenting stimuli
+                presentStimulus();
+                
+                // Update time
+                gameState.intervalId = setInterval(updateTimeLeft, 100);
+            });
+        }
+
+        function stopGame() {
+            gameState.isRunning = false;
+            
+            // Clear all timers
+            if (gameState.intervalId) clearInterval(gameState.intervalId);
+            if (gameState.timeoutId) clearTimeout(gameState.timeoutId);
+            if (gameState.countdownId) clearTimeout(gameState.countdownId);
+            if (gameState.nextStimulusTimeout) clearTimeout(gameState.nextStimulusTimeout);
+            
+            // Update UI
+            document.getElementById('startBtn').style.display = 'inline-block';
+            document.getElementById('stopBtn').style.display = 'none';
+            document.getElementById('stimulus').innerHTML = '';
+            document.getElementById('instruction').textContent = 'お疲れさまでした！';
+            
+            // Show final stats
+            const total = gameState.correct + gameState.incorrect;
+            const accuracy = total > 0 ? Math.round((gameState.correct / total) * 100) : 0;
+            
+            setTimeout(() => {
+                document.getElementById('instruction').textContent = 
+                    `結果: 正答 ${gameState.correct}回, 誤答 ${gameState.incorrect}回, 正答率 ${accuracy}%`;
+            }, 1000);
+        }
+
+        function toggleFullscreen() {
+            const container = document.getElementById('container');
+            const btn = document.getElementById('fullscreenBtn');
+            
+            if (container.classList.contains('fullscreen')) {
+                container.classList.remove('fullscreen');
+                document.body.classList.remove('fullscreen-mode');
+                btn.textContent = '全画面表示';
+                if (document.fullscreenElement) {
+                    document.exitFullscreen();
+                }
+            } else {
+                container.classList.add('fullscreen');
+                document.body.classList.add('fullscreen-mode');
+                btn.textContent = '通常表示';
+                
+                // Try multiple fullscreen methods for better compatibility
+                if (container.requestFullscreen) {
+                    container.requestFullscreen();
+                } else if (container.webkitRequestFullscreen) {
+                    container.webkitRequestFullscreen();
+                } else if (container.mozRequestFullScreen) {
+                    container.mozRequestFullScreen();
+                } else if (container.msRequestFullscreen) {
+                    container.msRequestFullscreen();
+                }
+                
+                // Hide address bar on mobile
+                window.scrollTo(0, 1);
+                
+                // For iOS Safari
+                if (window.navigator.standalone !== true) {
+                    setTimeout(() => {
+                        window.scrollTo(0, 1);
+                    }, 100);
+                }
+            }
+        }
+
+        // Hide address bar on load for mobile
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                window.scrollTo(0, 1);
+            }, 100);
+        });
+
+        // Prevent pull-to-refresh on mobile
+        let lastTouchY = 0;
+        let preventPullToRefresh = false;
+
+        document.addEventListener('touchstart', (e) => {
+            if (e.touches.length !== 1) return;
+            lastTouchY = e.touches[0].clientY;
+            preventPullToRefresh = window.pageYOffset === 0;
+        }, { passive: false });
+
+        document.addEventListener('touchmove', (e) => {
+            const touchY = e.touches[0].clientY;
+            const touchYDelta = touchY - lastTouchY;
+            lastTouchY = touchY;
+
+            if (preventPullToRefresh && touchYDelta > 0) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        function toggleMenu() {
+            const container = document.getElementById('container');
+            const settingsPanel = document.querySelector('.settings-panel');
+            const menuBtn = document.getElementById('menuToggleBtn');
+            
+            gameState.menuVisible = !gameState.menuVisible;
+            
+            if (gameState.menuVisible) {
+                settingsPanel.style.display = 'grid';
+                menuBtn.textContent = 'メニューを隠す';
+            } else {
+                settingsPanel.style.display = 'none';
+                menuBtn.textContent = 'メニュー';
+            }
+        }
+
+        // Event listeners
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('stopBtn').addEventListener('click', stopGame);
+        document.getElementById('fullscreenBtn').addEventListener('click', toggleFullscreen);
+        document.getElementById('menuToggleBtn').addEventListener('click', toggleMenu);
+
+        // Keyboard listener
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && gameState.isRunning) {
+                e.preventDefault();
+                handleResponse();
+            }
+        });
+
+        // Touch/click listener for mobile
+        document.getElementById('taskArea').addEventListener('click', () => {
+            if (gameState.isRunning) {
+                handleResponse();
+            }
+        });
+
+        // Update Go stimulus options based on stimulus type
+        document.getElementById('stimulusType').addEventListener('change', (e) => {
+            const type = e.target.value;
+            const goSelect = document.getElementById('goStimulus');
+            const options = stimuli[type];
+            
+            goSelect.innerHTML = '';
+            options.forEach((opt, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = `${opt.label}`;
+                goSelect.appendChild(option);
+            });
+        });
+    </script>
+</body>
+</html>
