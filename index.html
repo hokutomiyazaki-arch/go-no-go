@@ -9,6 +9,12 @@
     <meta name="theme-color" content="#667eea">
     <title>Go/No-Go タスクトレーニング</title>
     <style>
+        html {
+            height: 100%;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -19,21 +25,19 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            min-height: -webkit-fill-available;
             display: flex;
             justify-content: center;
             align-items: center;
             transition: background 0.5s ease;
-            overflow: hidden;
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
+            padding: 20px 0;
         }
 
         body.fullscreen-mode {
             background: #1a1a1a;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
         }
 
         .container {
@@ -43,8 +47,7 @@
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             max-width: 900px;
             width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
+            margin: 20px auto;
             backdrop-filter: blur(10px);
             transition: all 0.3s ease;
         }
@@ -56,11 +59,14 @@
             width: 100vw;
             height: 100vh;
             max-width: 100%;
+            margin: 0;
             border-radius: 0;
             display: flex;
             flex-direction: column;
             background: #1a1a1a;
             color: white;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         h1 {
@@ -107,6 +113,20 @@
             background: rgba(255, 255, 255, 0.1);
         }
 
+        #goStimulusContainer {
+            background: white;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .fullscreen #goStimulusContainer {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
         label {
             display: block;
             margin-bottom: 5px;
@@ -127,6 +147,12 @@
             font-size: 14px;
             transition: all 0.3s ease;
             background: white;
+        }
+
+        input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+            padding: 0;
         }
 
         select:focus, input:focus {
@@ -525,11 +551,11 @@
             </div>
             
             <div class="setting-group">
-                <label for="goStimulus">Go刺激</label>
-                <select id="goStimulus">
-                    <option value="0">1番目の刺激</option>
-                    <option value="1">2番目の刺激</option>
-                </select>
+                <label for="goStimulus">Go刺激（複数選択可）</label>
+                <div id="goStimulusContainer">
+                    <!-- チェックボックスは動的に生成されます -->
+                </div>
+                <small style="color: #718096; font-size: 12px; display: block; margin-top: 5px;">選択した刺激がGo刺激になります</small>
             </div>
             
             <div class="setting-group">
@@ -598,7 +624,7 @@
         let gameState = {
             isRunning: false,
             currentStimulus: null,
-            goStimulus: null,
+            goStimuli: [], // 複数のGo刺激を格納
             correct: 0,
             incorrect: 0,
             missed: 0,
@@ -748,7 +774,7 @@
             if (!gameState.isRunning || gameState.responded) return;
             
             gameState.responded = true;
-            const isGo = gameState.currentStimulus === gameState.goStimulus;
+            const isGo = gameState.goStimuli.includes(gameState.currentStimulus);
             
             if (isGo) {
                 gameState.correct++;
@@ -805,7 +831,7 @@
             
             // Check for missed Go stimulus (only in active mode)
             const responseMode = document.getElementById('responseMode').value;
-            const isGo = randomIndex === gameState.goStimulus;
+            const isGo = gameState.goStimuli.includes(randomIndex);
             if (isGo && responseMode === 'active') {
                 gameState.timeoutId = setTimeout(() => {
                     if (!gameState.responded && gameState.isRunning) {
@@ -832,14 +858,28 @@
             const instructionEl = document.getElementById('instruction');
             const responseMode = document.getElementById('responseMode').value;
             const stimulusType = document.getElementById('stimulusType').value;
-            const goIndex = parseInt(document.getElementById('goStimulus').value);
-            const goStimulus = stimuli[stimulusType][goIndex];
+            
+            // 選択されたGo刺激を取得
+            const selectedIndices = getSelectedGoStimuli();
+            const goStimuli = selectedIndices.map(index => stimuli[stimulusType][index].label);
             
             // Display Go stimulus instruction
             if (responseMode === 'active') {
-                instructionEl.innerHTML = `Go刺激: <strong>${goStimulus.label}</strong> → スペースキー/タップ`;
+                if (goStimuli.length === 0) {
+                    instructionEl.innerHTML = `⚠️ Go刺激を選択してください`;
+                    return;
+                } else if (goStimuli.length === 1) {
+                    instructionEl.innerHTML = `Go刺激: <strong>${goStimuli[0]}</strong> → スペースキー/タップ`;
+                } else {
+                    instructionEl.innerHTML = `Go刺激: <strong>${goStimuli.join('、')}</strong> → スペースキー/タップ`;
+                }
             } else {
-                instructionEl.innerHTML = `観察モード - Go刺激: <strong>${goStimulus.label}</strong>`;
+                if (goStimuli.length === 0) {
+                    instructionEl.innerHTML = `⚠️ Go刺激を選択してください`;
+                    return;
+                } else {
+                    instructionEl.innerHTML = `観察モード - Go刺激: <strong>${goStimuli.join('、')}</strong>`;
+                }
             }
             
             function updateCountdown() {
@@ -861,11 +901,18 @@
         function startGame() {
             initAudio();
             
+            // Go刺激の選択を確認
+            const selectedGoStimuli = getSelectedGoStimuli();
+            if (selectedGoStimuli.length === 0) {
+                alert('少なくとも1つのGo刺激を選択してください。');
+                return;
+            }
+            
             // Reset game state
             gameState = {
                 isRunning: true,
                 currentStimulus: null,
-                goStimulus: parseInt(document.getElementById('goStimulus').value),
+                goStimuli: selectedGoStimuli,
                 correct: 0,
                 incorrect: 0,
                 missed: 0,
@@ -946,45 +993,18 @@
                 } else if (container.msRequestFullscreen) {
                     container.msRequestFullscreen();
                 }
-                
-                // Hide address bar on mobile
-                window.scrollTo(0, 1);
-                
-                // For iOS Safari
-                if (window.navigator.standalone !== true) {
-                    setTimeout(() => {
-                        window.scrollTo(0, 1);
-                    }, 100);
-                }
             }
         }
 
-        // Hide address bar on load for mobile
+        // Hide address bar on load for mobile (without breaking scroll)
         window.addEventListener('load', () => {
-            setTimeout(() => {
-                window.scrollTo(0, 1);
-            }, 100);
-        });
-
-        // Prevent pull-to-refresh on mobile
-        let lastTouchY = 0;
-        let preventPullToRefresh = false;
-
-        document.addEventListener('touchstart', (e) => {
-            if (e.touches.length !== 1) return;
-            lastTouchY = e.touches[0].clientY;
-            preventPullToRefresh = window.pageYOffset === 0;
-        }, { passive: false });
-
-        document.addEventListener('touchmove', (e) => {
-            const touchY = e.touches[0].clientY;
-            const touchYDelta = touchY - lastTouchY;
-            lastTouchY = touchY;
-
-            if (preventPullToRefresh && touchYDelta > 0) {
-                e.preventDefault();
+            // Only try to hide address bar if in standalone mode
+            if (window.navigator.standalone) {
+                setTimeout(() => {
+                    window.scrollTo(0, 1);
+                }, 100);
             }
-        }, { passive: false });
+        });
 
         function toggleMenu() {
             const container = document.getElementById('container');
@@ -1008,6 +1028,14 @@
         document.getElementById('fullscreenBtn').addEventListener('click', toggleFullscreen);
         document.getElementById('menuToggleBtn').addEventListener('click', toggleMenu);
 
+        // Update Go stimulus options when stimulus type changes
+        document.getElementById('stimulusType').addEventListener('change', updateGoStimulusOptions);
+        
+        // Initialize Go stimulus options on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            updateGoStimulusOptions();
+        });
+
         // Keyboard listener
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space' && gameState.isRunning) {
@@ -1023,20 +1051,68 @@
             }
         });
 
-        // Update Go stimulus options based on stimulus type
-        document.getElementById('stimulusType').addEventListener('change', (e) => {
-            const type = e.target.value;
-            const goSelect = document.getElementById('goStimulus');
-            const options = stimuli[type];
+        function updateGoStimulusOptions() {
+            const stimulusType = document.getElementById('stimulusType').value;
+            const container = document.getElementById('goStimulusContainer');
+            const options = stimuli[stimulusType];
             
-            goSelect.innerHTML = '';
+            container.innerHTML = '';
+            
+            // 全選択/全解除ボタン
+            const buttonContainer = document.createElement('div');
+            buttonContainer.style.cssText = 'margin-bottom: 10px; display: flex; gap: 5px;';
+            
+            const selectAllBtn = document.createElement('button');
+            selectAllBtn.type = 'button';
+            selectAllBtn.textContent = '全選択';
+            selectAllBtn.style.cssText = 'padding: 4px 8px; background: #4299e1; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;';
+            selectAllBtn.onclick = () => selectAllGoStimuli(true);
+            
+            const clearAllBtn = document.createElement('button');
+            clearAllBtn.type = 'button';
+            clearAllBtn.textContent = '全解除';
+            clearAllBtn.style.cssText = 'padding: 4px 8px; background: #718096; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;';
+            clearAllBtn.onclick = () => selectAllGoStimuli(false);
+            
+            buttonContainer.appendChild(selectAllBtn);
+            buttonContainer.appendChild(clearAllBtn);
+            container.appendChild(buttonContainer);
+            
+            // 各刺激のチェックボックスを生成
             options.forEach((opt, index) => {
-                const option = document.createElement('option');
-                option.value = index;
-                option.textContent = `${opt.label}`;
-                goSelect.appendChild(option);
+                const checkboxDiv = document.createElement('div');
+                checkboxDiv.style.cssText = 'margin-bottom: 8px;';
+                
+                const label = document.createElement('label');
+                label.style.cssText = 'display: inline-flex; align-items: center; cursor: pointer; gap: 8px;';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'go-stimulus-checkbox';
+                checkbox.value = index;
+                if (index === 0) checkbox.checked = true;
+                
+                const span = document.createElement('span');
+                span.textContent = opt.label;
+                span.style.cssText = 'user-select: none;';
+                
+                label.appendChild(checkbox);
+                label.appendChild(span);
+                checkboxDiv.appendChild(label);
+                container.appendChild(checkboxDiv);
             });
-        });
+        }
+
+        // Global function declarations
+        window.selectAllGoStimuli = function(selectAll) {
+            const checkboxes = document.querySelectorAll('.go-stimulus-checkbox');
+            checkboxes.forEach(cb => cb.checked = selectAll);
+        }
+
+        function getSelectedGoStimuli() {
+            const checkboxes = document.querySelectorAll('.go-stimulus-checkbox:checked');
+            return Array.from(checkboxes).map(cb => parseInt(cb.value));
+        }
     </script>
 </body>
 </html>
