@@ -2,11 +2,12 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#667eea">
+    <meta name="format-detection" content="telephone=no">
     <title>Go/No-Go タスクトレーニング</title>
     <style>
         html {
@@ -72,13 +73,21 @@
         h1 {
             text-align: center;
             color: #4a5568;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
             font-size: 2em;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
         }
 
         .fullscreen h1 {
             color: white;
+        }
+
+        .rules-section {
+            transition: all 0.3s ease;
+        }
+
+        .fullscreen .rules-section {
+            display: none;
         }
 
         .settings-panel {
@@ -408,54 +417,56 @@
         }
 
         .shape {
-            width: 200px;
-            height: 200px;
             animation: fadeIn 0.3s ease;
         }
 
         @media (max-width: 768px) {
             .shape {
-                width: 150px;
-                height: 150px;
+                width: 180px !important;
+                height: 180px !important;
             }
         }
 
         .circle {
             background: #4299e1;
             border-radius: 50%;
+            width: 250px;
+            height: 250px;
         }
 
         .square {
             background: #48bb78;
+            width: 250px;
+            height: 250px;
         }
 
         .triangle {
             width: 0;
             height: 0;
-            border-left: 100px solid transparent;
-            border-right: 100px solid transparent;
-            border-bottom: 200px solid #f6ad55;
+            border-left: 125px solid transparent;
+            border-right: 125px solid transparent;
+            border-bottom: 250px solid #f6ad55;
         }
 
         @media (max-width: 768px) {
             .triangle {
-                border-left: 75px solid transparent;
-                border-right: 75px solid transparent;
-                border-bottom: 150px solid #f6ad55;
+                border-left: 90px solid transparent;
+                border-right: 90px solid transparent;
+                border-bottom: 180px solid #f6ad55;
             }
         }
 
         .diamond {
             background: #ed64a6;
             transform: rotate(45deg);
-            width: 141px;
-            height: 141px;
+            width: 177px;
+            height: 177px;
         }
 
         @media (max-width: 768px) {
             .diamond {
-                width: 106px;
-                height: 106px;
+                width: 127px;
+                height: 127px;
             }
         }
 
@@ -510,7 +521,40 @@
 <body>
     <div class="container" id="container">
         <button class="menu-toggle" id="menuToggleBtn">メニュー</button>
-        <h1>🧠 Go/No-Go タスクトレーニング</h1>
+        
+        <!-- ロゴとタイトル -->
+        <div style="text-align: center; margin-bottom: 20px;">
+            <img src="FNT_color2.png" 
+                 alt="Go/No-Go Logo" 
+                 style="width: 80px; height: 80px; margin-bottom: 10px;">
+            <h1 style="color: #4a5568; margin: 0; font-size: 2em;">Go/No-Go タスクトレーニング</h1>
+        </div>
+
+        <!-- ルール説明 -->
+        <div class="rules-section" style="background: rgba(255, 255, 255, 0.9); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+            <h3 style="color: #4a5568; margin-top: 0; font-size: 1.2em; display: flex; align-items: center;">
+                <span style="margin-right: 8px;">📖</span> ルール説明
+            </h3>
+            <div style="color: #2d3748; font-size: 0.95em; line-height: 1.6;">
+                <p style="margin: 8px 0;"><strong>基本ルール：</strong></p>
+                <ul style="margin: 5px 0 10px 20px;">
+                    <li><strong>Go刺激</strong>が表示されたら → <span style="color: #48bb78;">素早くスペースキー/タップ</span></li>
+                    <li><strong>No-Go刺激</strong>が表示されたら → <span style="color: #f56565;">反応しない（我慢する）</span></li>
+                </ul>
+                <p style="margin: 5px 0; color: #718096; font-size: 0.9em;">反応時間と正確性が記録されます。集中して素早く正確に反応しましょう！</p>
+            </div>
+            
+            <div id="passiveModeInfo" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0;">
+                <h4 style="color: #4a5568; margin-top: 0; font-size: 1em;">🎯 パッシブモード使用例</h4>
+                <ul style="margin: 10px 0 0 20px; color: #2d3748; font-size: 0.9em; line-height: 1.5;">
+                    <li><strong>リハビリ運動：</strong> Go刺激中はモーターコントロールを継続、No-Goで一旦停止</li>
+                    <li><strong>VOR訓練：</strong> Go刺激中にVOR継続、No-Go刺激でストップ</li>
+                    <li><strong>対戦ゲーム：</strong> 2人で向き合って座り、左右にボールを置く。→で右のボールを取る、←で左のボールを取る</li>
+                    <li><strong>立ち座り運動：</strong> Go刺激で立つ、No-Go刺激で座る</li>
+                </ul>
+                <p style="margin: 10px 0 0 0; color: #718096; font-size: 0.85em;">※自由にルールをカスタマイズして、日常動作と組み合わせてご使用ください。</p>
+            </div>
+        </div>
         
         <div class="settings-panel">
             <div class="setting-group">
@@ -719,14 +763,14 @@
             if (stimulus.type === 'color') {
                 stimulusEl.innerHTML = `<div style="width: 200px; height: 200px; background: ${stimulus.value}; border-radius: 10px;"></div>`;
             } else if (stimulus.type === 'arrow') {
-                stimulusEl.innerHTML = `<div class="stimulus">${stimulus.value}</div>`;
+                stimulusEl.innerHTML = `<div class="stimulus" style="font-size: 200px;">${stimulus.value}</div>`;
             } else if (stimulus.type === 'shape') {
-                stimulusEl.innerHTML = `<div class="shape ${stimulus.value}"></div>`;
+                stimulusEl.innerHTML = `<div class="shape ${stimulus.value}" style="width: 250px; height: 250px;"></div>`;
             } else if (stimulus.type === 'number') {
                 const num = stimulus.value === 'odd' ? 
                     (Math.floor(Math.random() * 50) * 2 + 1) : 
                     (Math.floor(Math.random() * 50) * 2);
-                stimulusEl.innerHTML = `<div class="stimulus">${num}</div>`;
+                stimulusEl.innerHTML = `<div class="stimulus" style="font-size: 200px;">${num}</div>`;
             }
         }
 
@@ -1031,9 +1075,32 @@
         // Update Go stimulus options when stimulus type changes
         document.getElementById('stimulusType').addEventListener('change', updateGoStimulusOptions);
         
+        // Show/hide passive mode info based on response mode
+        document.getElementById('responseMode').addEventListener('change', (e) => {
+            const passiveInfo = document.getElementById('passiveModeInfo');
+            if (e.target.value === 'passive') {
+                passiveInfo.style.display = 'block';
+            } else {
+                passiveInfo.style.display = 'none';
+            }
+        });
+        
         // Initialize Go stimulus options on page load
         window.addEventListener('DOMContentLoaded', () => {
             updateGoStimulusOptions();
+            
+            // Hide mobile browser UI on load
+            if ('standalone' in window.navigator && window.navigator.standalone) {
+                // iOS PWA
+                document.body.style.paddingTop = '20px';
+            }
+            
+            // Scroll to hide address bar
+            window.addEventListener('load', () => {
+                setTimeout(() => {
+                    window.scrollTo(0, 1);
+                }, 0);
+            });
         });
 
         // Keyboard listener
