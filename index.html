@@ -130,6 +130,7 @@
             justify-content: space-between;
             box-shadow: 0 2px 10px rgba(0,0,0,0.3);
             z-index: 100;
+            flex-shrink: 0;
         }
 
         .header-logo {
@@ -167,16 +168,15 @@
             top: 60px;
             left: 0;
             right: 0;
+            bottom: 0;
             background: rgba(26, 26, 26, 0.95);
             backdrop-filter: blur(10px);
             transform: translateY(-100%);
             transition: transform 0.3s ease;
             z-index: 99;
-            max-height: calc(100vh - 120px);
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            border-bottom: 2px solid #667eea;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         .menu-panel.open {
@@ -185,6 +185,10 @@
 
         .menu-content {
             padding: 20px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            flex: 1;
+            padding-bottom: 100px; /* 下部に余白を追加 */
         }
 
         /* ルール説明 */
@@ -274,7 +278,7 @@
             display: flex;
             flex-direction: column;
             padding: 20px;
-            padding-bottom: 10px; /* 下部の余白を調整 */
+            padding-bottom: 0;
             position: relative;
             overflow: hidden;
         }
@@ -286,7 +290,7 @@
             justify-content: center;
             align-items: center;
             position: relative;
-            min-height: 200px; /* 最小高さを確保 */
+            min-height: 150px;
         }
 
         .instruction {
@@ -364,10 +368,10 @@
         /* コントロールボタン */
         .controls {
             padding: 15px 20px;
-            padding-bottom: 80px; /* スコアボードとの重複を防ぐ */
             display: flex;
             justify-content: center;
             gap: 15px;
+            margin-bottom: 120px; /* スコアボードのスペースを確保 */
         }
 
         .control-btn {
@@ -402,43 +406,49 @@
             bottom: 35px; /* フッターの上に配置 */
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 12px 20px;
             border-radius: 10px;
             display: flex;
             gap: 20px;
             z-index: 50;
             max-width: 90%;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
         }
 
         @media (max-width: 480px) {
             .stats {
-                gap: 15px;
-                padding: 8px 15px;
+                gap: 12px;
+                padding: 10px 15px;
+                bottom: 30px;
             }
         }
 
         .stat-item {
             text-align: center;
             color: white;
-            min-width: 50px;
+            min-width: 45px;
         }
 
         .stat-label {
-            font-size: 11px;
+            font-size: 10px;
             opacity: 0.8;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .stat-value {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             margin-top: 2px;
         }
 
         @media (max-width: 480px) {
             .stat-value {
-                font-size: 16px;
+                font-size: 14px;
+            }
+            .stat-label {
+                font-size: 9px;
             }
         }
 
@@ -1067,8 +1077,13 @@
         window.addEventListener('DOMContentLoaded', () => {
             updateGoStimulusOptions();
             
-            // Prevent scrolling
+            // Prevent scrolling on main app, but allow in menu
             document.addEventListener('touchmove', (e) => {
+                // メニューパネル内のスクロールは許可
+                if (e.target.closest('.menu-content')) {
+                    return;
+                }
+                // それ以外は防止
                 e.preventDefault();
             }, { passive: false });
             
