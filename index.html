@@ -174,7 +174,6 @@
             transform: translateY(-100%);
             transition: transform 0.3s ease;
             z-index: 99;
-            overflow: hidden;
             display: flex;
             flex-direction: column;
         }
@@ -186,9 +185,12 @@
         .menu-content {
             padding: 20px;
             overflow-y: auto;
+            overflow-x: hidden;
             -webkit-overflow-scrolling: touch;
             flex: 1;
-            padding-bottom: 100px; /* 下部に余白を追加 */
+            padding-bottom: 100px;
+            position: relative;
+            touch-action: pan-y;
         }
 
         /* ルール説明 */
@@ -496,12 +498,36 @@
             50% { transform: scale(1.1); }
         }
 
-        /* スクロール防止 */
+        /* スクロール防止（メニュー以外） */
         .no-scroll {
             overflow: hidden !important;
             position: fixed !important;
             width: 100% !important;
             height: 100% !important;
+        }
+        
+        /* メニューオープン時のbody制御 */
+        body.menu-open {
+            overflow: hidden;
+        }
+        
+        /* iOSのバウンススクロール対策 */
+        .menu-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .menu-content::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+        
+        .menu-content::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+        
+        .menu-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
         }
     </style>
 </head>
@@ -1077,27 +1103,42 @@
         window.addEventListener('DOMContentLoaded', () => {
             updateGoStimulusOptions();
             
-            // Prevent scrolling on main app, but allow in menu
+            // スクロール制御の改善
+            let touchStartY = 0;
+            let touchEndY = 0;
+            
+            document.addEventListener('touchstart', (e) => {
+                touchStartY = e.touches[0].clientY;
+            }, { passive: true });
+            
             document.addEventListener('touchmove', (e) => {
-                // メニューパネル内のスクロールは許可
-                if (e.target.closest('.menu-content')) {
+                touchEndY = e.touches[0].clientY;
+                
+                // メニューコンテンツ内の場合はスクロールを許可
+                const menuContent = e.target.closest('.menu-content');
+                if (menuContent) {
+                    // メニュー内のスクロールは制限しない
                     return;
                 }
-                // それ以外は防止
+                
+                // メニューパネル内でもメニューコンテンツ外の場合は防止
+                const menuPanel = e.target.closest('.menu-panel');
+                if (menuPanel && !menuContent) {
+                    e.preventDefault();
+                    return;
+                }
+                
+                // その他のエリアはスクロール防止
                 e.preventDefault();
             }, { passive: false });
             
-            // Prevent pull-to-refresh
-            let lastY = 0;
-            document.addEventListener('touchstart', (e) => {
-                lastY = e.touches[0].clientY;
-            }, { passive: false });
-            
+            // プルリフレッシュ防止（メニュー外のみ）
             document.addEventListener('touchmove', (e) => {
-                const y = e.touches[0].clientY;
-                const scrolling = y > lastY;
-                if (scrolling && window.pageYOffset === 0) {
-                    e.preventDefault();
+                if (!e.target.closest('.menu-content')) {
+                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    if (scrollTop === 0 && touchEndY > touchStartY) {
+                        e.preventDefault();
+                    }
                 }
             }, { passive: false });
         });
