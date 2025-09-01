@@ -12,11 +12,11 @@
     <!-- PWA設定 -->
     <link rel="apple-touch-icon" href="FNT512.png">
     <link rel="icon" type="image/png" href="FNT512.png">
-    <meta name="apple-mobile-web-app-title" content="Go/No-Go Task">
-    <meta name="application-name" content="Go/No-Go Task">
+    <meta name="apple-mobile-web-app-title" content="Go/No-Go FNT">
+    <meta name="application-name" content="Go/No-Go FNT">
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="data:application/json;base64,ewogICAgIm5hbWUiOiAiR28vTm8tR28gVGFzayBUcmFpbmluZyIsCiAgICAic2hvcnRfbmFtZSI6ICJHby9Oby1HbyIsCiAgICAiaWNvbnMiOiBbCiAgICAgICAgewogICAgICAgICAgICAic3JjIjogIkZOVDUxMi5wbmciLAogICAgICAgICAgICAic2l6ZXMiOiAiNTEyeDUxMiIsCiAgICAgICAgICAgICJ0eXBlIjogImltYWdlL3BuZyIKICAgICAgICB9CiAgICBdLAogICAgInN0YXJ0X3VybCI6ICIuIiwKICAgICJkaXNwbGF5IjogImZ1bGxzY3JlZW4iLAogICAgImJhY2tncm91bmRfY29sb3IiOiAiIzY2N2VlYSIsCiAgICAidGhlbWVfY29sb3IiOiAiIzY2N2VlYSIsCiAgICAib3JpZW50YXRpb24iOiAicG9ydHJhaXQiCn0=">
+    <link rel="manifest" href="manifest.json">
     
     <title>Go/No-Go Task Training - Functional Neuro Training</title>
     <style>
@@ -676,12 +676,116 @@
     </div>
 
     <script>
-        // PWA対応とアドレスバー非表示
+        // Service Worker登録とPWAインストール処理
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful');
+                        
+                        // アップデート確認
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // 新しいバージョンが利用可能
+                                    if (confirm('新しいバージョンが利用可能です。更新しますか？')) {
+                                        window.location.reload();
+                                    }
+                                }
+                            });
+                        });
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+                
                 // アドレスバーを隠す
                 window.scrollTo(0, 1);
             });
+        }
+        
+        // PWAインストールプロンプト処理
+        let deferredPrompt;
+        let installButton = null;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // デフォルトのプロンプトを防ぐ
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // インストールボタンを表示（必要に応じて）
+            showInstallPromotion();
+        });
+        
+        function showInstallPromotion() {
+            // インストールボタンがまだない場合は作成
+            if (!installButton && !window.matchMedia('(display-mode: standalone)').matches) {
+                installButton = document.createElement('button');
+                installButton.textContent = 'アプリをインストール';
+                installButton.style.cssText = `
+                    position: fixed;
+                    bottom: 100px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 12px 24px;
+                    border: none;
+                    border-radius: 25px;
+                    font-size: 14px;
+                    font-weight: bold;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+                    z-index: 1000;
+                    cursor: pointer;
+                    display: none;
+                `;
+                
+                installButton.addEventListener('click', installApp);
+                document.body.appendChild(installButton);
+                
+                // 少し遅延させて表示
+                setTimeout(() => {
+                    if (installButton) {
+                        installButton.style.display = 'block';
+                    }
+                }, 3000);
+            }
+        }
+        
+        async function installApp() {
+            if (!deferredPrompt) return;
+            
+            // プロンプトを表示
+            deferredPrompt.prompt();
+            
+            // ユーザーの選択を待つ
+            const { outcome } = await deferredPrompt.userChoice;
+            
+            if (outcome === 'accepted') {
+                console.log('User accepted the install prompt');
+                if (installButton) {
+                    installButton.style.display = 'none';
+                }
+            } else {
+                console.log('User dismissed the install prompt');
+            }
+            
+            deferredPrompt = null;
+        }
+        
+        // インストール成功時
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA was installed');
+            if (installButton) {
+                installButton.remove();
+                installButton = null;
+            }
+        });
+        
+        // スタンドアロンモードで実行されているか確認
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            console.log('Running in standalone mode');
         }
 
         // スプラッシュスクリーン
@@ -751,12 +855,23 @@
         document.getElementById('menuToggleBtn').addEventListener('click', () => {
             const panel = document.getElementById('menuPanel');
             const btn = document.getElementById('menuToggleBtn');
+            const body = document.body;
+            
             if (panel.classList.contains('open')) {
                 panel.classList.remove('open');
+                body.classList.remove('menu-open');
                 btn.textContent = 'メニュー';
             } else {
                 panel.classList.add('open');
+                body.classList.add('menu-open');
                 btn.textContent = '閉じる';
+                // メニューを開いた時にスクロール位置をリセット
+                setTimeout(() => {
+                    const menuContent = document.querySelector('.menu-content');
+                    if (menuContent) {
+                        menuContent.scrollTop = 0;
+                    }
+                }, 100);
             }
         });
 
